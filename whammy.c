@@ -152,7 +152,7 @@ const struct bt_gatt_attr *y_tilt_attr = &svc.attrs[13];
 #endif
 #endif
 
-const char *role_str() 
+const char *role_str()
 {
 #if CONFIG_APP_ROLE_TRANSMITTER && CONFIG_APP_ROLE_RECEIVER
 	return "dual";
@@ -168,7 +168,7 @@ const char *role_str()
 
 #if CONFIG_APP_ROLE_TRANSMITTER
 static struct k_work peripheral_state_change_work;
-void app_bt_peripheral_state_change(struct k_work *work) 
+void app_bt_peripheral_state_change(struct k_work *work)
 {
 	bool advertising = ztacx_variable_value_get_bool(bt_peripheral_advertising);
 	bool connected = ztacx_variable_value_get_bool(bt_peripheral_connected);
@@ -194,12 +194,12 @@ void app_bt_peripheral_state_change(struct k_work *work)
 static struct k_work central_state_change_work;
 static struct k_work level_change_work;
 static struct k_work_delayable central_request_connect_work;
-void app_bt_central_request_connect(struct k_work *work) 
+void app_bt_central_request_connect(struct k_work *work)
 {
 	LOG_INF("");
 	ztacx_variable_value_set_bool(bt_central_connect, true);
 }
-void app_bt_central_state_change(struct k_work *work) 
+void app_bt_central_state_change(struct k_work *work)
 {
 	bool scanning = ztacx_variable_value_get_bool(bt_central_scanning);
 	bool connected = ztacx_variable_value_get_bool(bt_central_connected);
@@ -221,18 +221,22 @@ void app_bt_central_state_change(struct k_work *work)
 	}
 }
 
-void app_level_change(struct k_work *work) 
+void app_level_change(struct k_work *work)
 {
 	int16_t level = ztacx_variable_value_get_int16(bt_central_subscribe16_value);
 	int16_t level_was = ztacx_variable_value_get_int16(expression_value);
 	LOG_INF("Received level change %d => %d", (int)level_was, (int)level);
 	ztacx_variable_value_set_int16(expression_value, level);
+#if CONFIG_ZTACX_LEAF_DAC
+	ztacx_variable_value_set_int16(dac_level, level);
+#endif
+
 }
 
 
 #endif
 
-static int app_init(void) 
+static int app_init(void)
 {
 	LOG_INF("NOTICE >INIT app");
 	printk("Accelerando BT Whammy Pedal (%s) app init\n", role_str());
@@ -314,7 +318,7 @@ static int app_init(void)
 	LOG_INF("setting RGB led to RED");
 	ztacx_variable_value_set_string(led_strip_color, "red");
 #endif
-	
+
 	LOG_INF("NOTICE <READY app");
 	return 0;
 }
@@ -322,22 +326,22 @@ static int app_init(void)
 #if CONFIG_ZTACX_LEAF_IMS
 static struct k_work x_change_work;
 
-void x_change(struct k_work *work) 
+void x_change(struct k_work *work)
 {
 	int64_t count = ztacx_variable_value_get_int64(ims_samples);
 	int32_t level = ztacx_variable_value_get_int32(ims_level_x);
 	int16_t value = level;
-	
+
 #if CONFIG_ZTACX_LEAF_BT_PERIPHERAL
 	LOG_INF("Notify X change %d (sample count=%lld)", (int)level, (long long)count);
 	//bt_gatt_notify(NULL, x_tilt_attr, &level, sizeof(level));
 	ztacx_variable_value_set_int16(expression_value, value);
 	bt_gatt_notify(NULL, expression_value_attr, &value, sizeof(value));
-#endif	
+#endif
 }
 #endif
 
-static int app_start(void) 
+static int app_start(void)
 {
 	LOG_INF("NOTICE >START app %s v%s", CONFIG_BT_DEVICE_NAME, CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION);
 #if CONFIG_ZTACX_LEAF_BT_PERIPHERAL
