@@ -1,0 +1,6 @@
+.build
+.envrc
+dist.sh
+rtt.log
+whammy-fixture-pcb/whammy-fixture-backups
+scripts

@@ -1,0 +1,29 @@
+&i2c0 {
+	status = "okay";
+
+	mpu6050@68 {
+		compatible = "invensense,mpu6050";
+		reg = <0x68>;
+		status = "okay";
+		label = "MPU6050";
+		int-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+	};
+
+/*
+        lis2dh12: lis2dh12@18 {
+                compatible = "st,lis2dh12", "st,lis2dh";
+                reg = <0x18>;
+                //irq-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+                label = "IMS";
+        };
+*/
+
+/*
+        adxl345@53 {
+                compatible = "adi,adxl345";
+                reg = <0x53>;
+                label = "IMS";
+        };
+*/
+};
+

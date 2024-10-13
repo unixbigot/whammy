@@ -1,0 +1,21 @@
+mainmenu "Example"
+
+rsource "ztacx/Kconfig.ztacx"
+source "Kconfig.zephyr"
+
+config APP_DAC_DEVICE
+       string "Name of device to use for DAC output readings"
+       default "dac0"
+       depends on ZTACX_LEAF_IMS
+
+config APP_ROLE_TRANSMITTER
+       bool "Act as an expression transmitter (pedal)"
+       default "true"
+
+config APP_ROLE_RECEIVER
+       bool "Act as an expression receiver (virtual pedal)"
+       default "false"
+
+config APP_TILT_THRESHOLD
+       int "Threshold for tilt change (centidegree)"
+       default 500
