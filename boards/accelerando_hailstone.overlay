@@ -32,7 +32,6 @@
 	current-speed = <115200>;
 	status = "okay";
 };
-
 &i2c0 {
 	status = "disabled";
 };

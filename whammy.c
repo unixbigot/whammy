@@ -193,6 +193,7 @@ void app_bt_peripheral_state_change(struct k_work *work)
 #if CONFIG_APP_ROLE_RECEIVER
 static struct k_work central_state_change_work;
 static struct k_work level_change_work;
+static struct k_work_delayable level_change_reset_indicator_work;
 static struct k_work_delayable central_request_connect_work;
 void app_bt_central_request_connect(struct k_work *work)
 {
@@ -223,14 +224,33 @@ void app_bt_central_state_change(struct k_work *work)
 
 void app_level_change(struct k_work *work)
 {
-	int16_t level = ztacx_variable_value_get_int16(bt_central_subscribe16_value);
+	int16_t raw_level = ztacx_variable_value_get_int16(bt_central_subscribe16_value);
 	int16_t level_was = ztacx_variable_value_get_int16(expression_value);
-	LOG_INF("Received level change %d => %d", (int)level_was, (int)level);
-	ztacx_variable_value_set_int16(expression_value, level);
-#if CONFIG_ZTACX_LEAF_DAC
-	ztacx_variable_value_set_int16(dac_level, level);
-#endif
+	
+	// Tilt is in cm/s/s (sans shaking, -980 to 980).
+	//Scale this to 0--4095, clipping at 980
+	int32_t mapped_level = (raw_level+980)*4095/1960;
+	if (mapped_level < 0) mapped_level = 0;
+	if (mapped_level > 4095) mapped_level = 4095;
 
+	if (mapped_level == level_was) return;
+	LOG_INF("Received level change %d => %d (raw %d)", (int)level_was, (int)mapped_level, (int)raw_level);
+	
+	ztacx_variable_value_set_int16(expression_value, (int16_t)mapped_level);
+#if CONFIG_ZTACX_LEAF_DAC
+	ztacx_variable_value_set_int16(dac_level, mapped_level);
+#endif
+#ifdef CONFIG_ZTACX_LEAF_LED_STRIP
+	ztacx_variable_value_set_string(led_strip_color, "blue");
+	k_work_schedule(&level_change_reset_indicator_work, K_MSEC(10));
+#endif
+}
+
+void app_level_change_reset_indicator(struct k_work *work) 
+{
+#ifdef CONFIG_ZTACX_LEAF_LED_STRIP
+	ztacx_variable_value_set_string(led_strip_color, "green");
+#endif
 }
 
 
@@ -304,6 +324,7 @@ static int app_init(void)
 	LOG_INF("register change handler for bluetooth central state");
 	k_work_init(&central_state_change_work, &app_bt_central_state_change);
 	k_work_init(&level_change_work, &app_level_change);
+	k_work_init_delayable(&level_change_reset_indicator_work, &app_level_change_reset_indicator);
 	k_work_init_delayable(&central_request_connect_work, &app_bt_central_request_connect);
 	if (bt_central_scanning) {
 		ztacx_variable_ptr_set_onchange(bt_central_scanning, &central_state_change_work);
@@ -331,10 +352,11 @@ void x_change(struct k_work *work)
 	int64_t count = ztacx_variable_value_get_int64(ims_samples);
 	int32_t level = ztacx_variable_value_get_int32(ims_level_x);
 	int16_t value = level;
+	int16_t map_value;
 
 #if CONFIG_ZTACX_LEAF_BT_PERIPHERAL
 	LOG_INF("Notify X change %d (sample count=%lld)", (int)level, (long long)count);
-	//bt_gatt_notify(NULL, x_tilt_attr, &level, sizeof(level));
+	bt_gatt_notify(NULL, x_tilt_attr, &level, sizeof(level));
 	ztacx_variable_value_set_int16(expression_value, value);
 	bt_gatt_notify(NULL, expression_value_attr, &value, sizeof(value));
 #endif

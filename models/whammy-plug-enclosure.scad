@@ -12,9 +12,9 @@
 //
 /* [Box parameters] */
 // Length of box in mm
-length = 45;   //[10:254]
+length = 50;   //[10:254]
 // Width of box in mm
-width = 28;    //[10:254]
+width = 32;    //[10:254]
 // Height of box in mm
 tall = 13;      //[10:254]
 // Wall thickness of box in mm
@@ -56,9 +56,9 @@ module post() {
 module box() {
     translate([cRadius, cRadius, 0]){
 	// Create a hollow box
-	difference() {	
+	difference() {
 	    // Create box shape
-	    roundedBox(length,width,tall,cRadius,sqCorners); 
+	    roundedBox(length,width,tall,cRadius,sqCorners);
 	    // Create negative box shape, smaller by wall thickness plus clearance
 	    translate([thick,thick,thick]) { 
 		minkowski() { roundedBox(length-(thick*2),width-(thick*2),tall,cRadius,sqCorners);
@@ -82,13 +82,14 @@ module box() {
 	    }
 	    // cut openings in box	
 	    //translate([(width-12)/2-cRadius,-cRadius-0.1,thick+2]) cube([12,10,6]);
-	    translate([width/2-cRadius,6-cRadius,-fuz]) cylinder(d=8,h=5);
+	    translate([width/2-cRadius,6-cRadius,-fuz]) cylinder(d=10-1,h=5);
 	    
 	}
     }
     // Add mounting posts inside box
     //translate([(width-9)/2, 10, thick]) post();
     //translate([(width+9)/2, 10, thick]) post();
+    translate([4, length-32-thick, 0]) cube([width-12,thick,6]);
 }
 box();
 
@@ -115,14 +116,14 @@ module lid() {
 
 		// Cut holes in lid
 		//translate([width/2-cRadius,length/2-cRadius,thick/2]) cube([15,24,4*thick],center=true);
-        	    translate([width/2-cRadius,10-cRadius,-fuz]) cylinder(d=7,h=5);
+        	    translate([width/2-cRadius-7,9-cRadius,-fuz]) cylinder(d=4,h=5);
 
             }
 	}
     }
 }
 
-lid();
+//lid();
 
 // Render box according to parameters
 module roundedBox(length, width, tall, radius, sqCorners)
